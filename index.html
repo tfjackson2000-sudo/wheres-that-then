@@ -1,0 +1,3201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Where's that then? — Offline household item tracker to remember where you put things away.">
+  <title>Where's that then? — Household Item Tracker</title>
+
+  <!-- Inline SVG Favicon (Zero external dependencies) -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230f766e'/%3E%3Cpath d='M32 13L13 28v22a3 3 0 0 0 3 3h32a3 3 0 0 0 3-3V28L32 13z' fill='none' stroke='%23ffffff' stroke-width='4' stroke-linejoin='round'/%3E%3Ccircle cx='31' cy='35' r='7' fill='none' stroke='%2399f6e4' stroke-width='3.5'/%3E%3Cpath d='M36.5 40.5L43 47' stroke='%2399f6e4' stroke-width='3.5' stroke-linecap='round'/%3E%3C/svg%3E">
+
+  <style>
+    /* =========================================================================
+       1. DESIGN TOKENS & THEMING (Light & Dark Mode)
+       ========================================================================= */
+    :root {
+      --bg-app: #f4f6f8;
+      --bg-surface: #ffffff;
+      --bg-surface-subtle: #f8fafc;
+      --bg-surface-hover: #f1f5f9;
+      --bg-input: #ffffff;
+
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+
+      --border-subtle: #e2e8f0;
+      --border-strong: #cbd5e1;
+
+      /* Primary Accent: Refined Deep Teal */
+      --accent: #0f766e;
+      --accent-hover: #115e59;
+      --accent-soft: #f0fdfa;
+      --accent-soft-border: #99f6e4;
+      --accent-text: #0f766e;
+
+      /* Semantic & Badge Tokens */
+      --room-bg: #ecfdf5;
+      --room-border: #a7f3d0;
+      --room-text: #065f46;
+
+      --person-bg: #eef2ff;
+      --person-border: #c7d2fe;
+      --person-text: #3730a3;
+
+      --place-bg: #fffbeb;
+      --place-border: #fde68a;
+      --place-text: #92400e;
+
+      --danger: #dc2626;
+      --danger-hover: #b91c1c;
+      --danger-soft: #fef2f2;
+      --danger-border: #fecaca;
+
+      --warning: #d97706;
+      --success: #059669;
+
+      /* Elevation & Geometry */
+      --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.05);
+      --shadow-sm: 0 2px 6px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+      --shadow-md: 0 10px 25px -5px rgba(15, 23, 42, 0.12), 0 4px 10px -4px rgba(15, 23, 42, 0.06);
+      --shadow-lg: 0 20px 40px -10px rgba(15, 23, 42, 0.25);
+
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-pill: 9999px;
+
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    [data-theme="dark"] {
+      --bg-app: #0c1118;
+      --bg-surface: #151c26;
+      --bg-surface-subtle: #1b2432;
+      --bg-surface-hover: #222d3e;
+      --bg-input: #101620;
+
+      --text-primary: #f1f5f9;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+
+      --border-subtle: #253042;
+      --border-strong: #37465e;
+
+      --accent: #14b8a6;
+      --accent-hover: #2dd4bf;
+      --accent-soft: rgba(20, 184, 166, 0.14);
+      --accent-soft-border: rgba(45, 212, 191, 0.35);
+      --accent-text: #5eead4;
+
+      --room-bg: rgba(16, 185, 129, 0.14);
+      --room-border: rgba(52, 211, 153, 0.3);
+      --room-text: #6ee7b7;
+
+      --person-bg: rgba(129, 140, 248, 0.15);
+      --person-border: rgba(165, 180, 252, 0.32);
+      --person-text: #c7d2fe;
+
+      --place-bg: rgba(245, 158, 11, 0.12);
+      --place-border: rgba(251, 191, 36, 0.28);
+      --place-text: #fde68a;
+
+      --danger: #ef4444;
+      --danger-hover: #f87171;
+      --danger-soft: rgba(239, 68, 68, 0.14);
+      --danger-border: rgba(248, 113, 113, 0.32);
+
+      --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
+      --shadow-md: 0 12px 28px rgba(0, 0, 0, 0.5);
+      --shadow-lg: 0 24px 48px rgba(0, 0, 0, 0.65);
+    }
+
+    /* =========================================================================
+       2. BASE RESET & ACCESSIBILITY
+       ========================================================================= */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html {
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: var(--font-sans);
+      background-color: var(--bg-app);
+      color: var(--text-primary);
+      line-height: 1.5;
+      min-height: 100vh;
+      overflow-x: hidden;
+      transition: background-color var(--transition-fast), color var(--transition-fast);
+    }
+
+    button, input, select, textarea {
+      font: inherit;
+      color: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* =========================================================================
+       3. LAYOUT SHELL & STICKY HEADER
+       ========================================================================= */
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background-color: var(--bg-surface);
+      border-bottom: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-xs);
+    }
+
+    .header-inner {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 0.85rem 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      min-width: 0;
+    }
+
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, #0f766e, #0d9488);
+      color: #ffffff;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 2px 6px rgba(15, 118, 110, 0.28);
+    }
+
+    .brand-text {
+      min-width: 0;
+    }
+
+    .brand-title {
+      margin: 0;
+      font-size: 1.2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      color: var(--text-primary);
+    }
+
+    .brand-subtitle {
+      margin: 0;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .header-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .backup-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      background: var(--bg-surface-subtle);
+      border: 1px solid var(--border-subtle);
+      padding: 0.35rem 0.65rem;
+      border-radius: var(--radius-pill);
+      white-space: nowrap;
+    }
+
+    .backup-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background-color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    .backup-dot.is-fresh {
+      background-color: var(--success);
+    }
+
+    .backup-dot.is-stale {
+      background-color: var(--warning);
+    }
+
+    /* =========================================================================
+       4. BUTTONS
+       ========================================================================= */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      min-height: 40px;
+      padding: 0.5rem 0.9rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      font-size: 0.875rem;
+      font-weight: 600;
+      line-height: 1.2;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), transform 100ms ease;
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-primary {
+      background-color: var(--accent);
+      color: #ffffff;
+      box-shadow: 0 1px 3px rgba(15, 118, 110, 0.25);
+    }
+
+    [data-theme="dark"] .btn-primary {
+      color: #042f2e;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background-color: var(--accent-hover);
+    }
+
+    .btn-secondary {
+      background-color: var(--bg-surface);
+      border-color: var(--border-strong);
+      color: var(--text-primary);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background-color: var(--bg-surface-hover);
+    }
+
+    .btn-ghost {
+      background-color: transparent;
+      color: var(--text-secondary);
+      border-color: transparent;
+    }
+
+    .btn-ghost:hover:not(:disabled) {
+      background-color: var(--bg-surface-hover);
+      color: var(--text-primary);
+    }
+
+    .btn-danger {
+      background-color: var(--danger);
+      color: #ffffff;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background-color: var(--danger-hover);
+    }
+
+    .btn-danger-soft {
+      background-color: var(--danger-soft);
+      border-color: var(--danger-border);
+      color: var(--danger);
+    }
+
+    .btn-danger-soft:hover:not(:disabled) {
+      background-color: var(--danger);
+      color: #ffffff;
+      border-color: var(--danger);
+    }
+
+    .btn-icon {
+      min-width: 40px;
+      padding: 0.5rem;
+    }
+
+    .btn-sm {
+      min-height: 34px;
+      padding: 0.35rem 0.65rem;
+      font-size: 0.8rem;
+      border-radius: 7px;
+    }
+
+    .btn-sm.btn-icon {
+      min-width: 34px;
+      padding: 0.35rem;
+    }
+
+    .icon {
+      width: 17px;
+      height: 17px;
+      flex-shrink: 0;
+      display: inline-block;
+    }
+
+    .icon-sm {
+      width: 15px;
+      height: 15px;
+    }
+
+    /* =========================================================================
+       5. MAIN CONTAINER & SEARCH/FILTER TOOLBAR
+       ========================================================================= */
+    .main-container {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 1.15rem 1rem 3rem;
+    }
+
+    .controls-panel {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 1rem;
+      box-shadow: var(--shadow-xs);
+      margin-bottom: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    /* Prominent Search Bar */
+    .search-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      width: 100%;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 0.9rem;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .search-input {
+      width: 100%;
+      min-height: 46px;
+      padding: 0.65rem 2.7rem 0.65rem 2.65rem;
+      background-color: var(--bg-input);
+      border: 1.5px solid var(--border-strong);
+      border-radius: var(--radius-md);
+      font-size: 0.98rem;
+      color: var(--text-primary);
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .search-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    .search-clear-btn {
+      position: absolute;
+      right: 0.45rem;
+      width: 34px;
+      height: 34px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--text-muted);
+      display: grid;
+      place-items: center;
+      transition: background-color var(--transition-fast), color var(--transition-fast);
+    }
+
+    .search-clear-btn:hover {
+      background-color: var(--bg-surface-hover);
+      color: var(--text-primary);
+    }
+
+    .search-clear-btn[hidden] {
+      display: none;
+    }
+
+    /* Filters & Sort Row */
+    .filters-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex: 1 1 155px;
+      min-width: 0;
+    }
+
+    .filter-select {
+      width: 100%;
+      min-height: 38px;
+      padding: 0.4rem 0.7rem;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      background-color: var(--bg-input);
+      color: var(--text-primary);
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    .filter-select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .toggle-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      min-height: 38px;
+      padding: 0.4rem 0.8rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-strong);
+      background-color: var(--bg-input);
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      font-weight: 600;
+      white-space: nowrap;
+      transition: all var(--transition-fast);
+    }
+
+    .toggle-pill:hover {
+      background-color: var(--bg-surface-hover);
+      color: var(--text-primary);
+    }
+
+    .toggle-pill[aria-pressed="true"] {
+      background-color: var(--accent-soft);
+      border-color: var(--accent);
+      color: var(--accent-text);
+    }
+
+    .controls-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      padding-top: 0.2rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .count-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background-color: var(--bg-surface-subtle);
+      border: 1px solid var(--border-subtle);
+      padding: 0.25rem 0.65rem;
+      border-radius: var(--radius-pill);
+    }
+
+    .storage-note {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* =========================================================================
+       6. ITEMS GRID & CARD DESIGN
+       ========================================================================= */
+    .items-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.95rem;
+    }
+
+    .item-card {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 1rem;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      min-width: 0;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
+    }
+
+    .item-card:hover {
+      border-color: var(--border-strong);
+      box-shadow: var(--shadow-md);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.6rem;
+    }
+
+    .card-title {
+      margin: 0;
+      font-size: 1.08rem;
+      font-weight: 750;
+      line-height: 1.3;
+      color: var(--text-primary);
+      word-break: break-word;
+    }
+
+    .card-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      flex-shrink: 0;
+    }
+
+    /* Badges for Room & Person */
+    .badges-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.32rem;
+      padding: 0.24rem 0.6rem;
+      border-radius: var(--radius-pill);
+      font-size: 0.78rem;
+      font-weight: 600;
+      line-height: 1.25;
+      border: 1px solid transparent;
+      max-width: 100%;
+    }
+
+    .badge span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .badge-room {
+      background-color: var(--room-bg);
+      border-color: var(--room-border);
+      color: var(--room-text);
+    }
+
+    .badge-person {
+      background-color: var(--person-bg);
+      border-color: var(--person-border);
+      color: var(--person-text);
+    }
+
+    /* Highlighted Exact Spot / Place Box */
+    .place-box {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      padding: 0.55rem 0.72rem;
+      background-color: var(--place-bg);
+      border: 1px solid var(--place-border);
+      border-radius: var(--radius-sm);
+      color: var(--place-text);
+      font-size: 0.88rem;
+      font-weight: 600;
+      line-height: 1.38;
+      word-break: break-word;
+    }
+
+    .place-box .icon {
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+
+    .card-notes {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.45;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* Card Photo Thumbnails */
+    .card-photos {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.55rem;
+    }
+
+    .card-photos.single-photo {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .photo-thumb-btn {
+      position: relative;
+      display: block;
+      width: 100%;
+      padding: 0;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      background-color: var(--bg-surface-subtle);
+      aspect-ratio: 16 / 10;
+      transition: transform var(--transition-fast), border-color var(--transition-fast);
+    }
+
+    .photo-thumb-btn:hover {
+      border-color: var(--accent);
+      transform: scale(1.015);
+    }
+
+    .photo-thumb-btn img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .photo-thumb-label {
+      position: absolute;
+      left: 6px;
+      bottom: 6px;
+      padding: 0.16rem 0.45rem;
+      border-radius: 6px;
+      background: rgba(15, 23, 42, 0.72);
+      color: #ffffff;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      backdrop-filter: blur(4px);
+    }
+
+    .card-footer {
+      margin-top: auto;
+      padding-top: 0.55rem;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* =========================================================================
+       7. EMPTY STATES
+       ========================================================================= */
+    .empty-state {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 3rem 1.5rem;
+      background-color: var(--bg-surface);
+      border: 1.5px dashed var(--border-strong);
+      border-radius: var(--radius-lg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .empty-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: var(--radius-lg);
+      background-color: var(--accent-soft);
+      color: var(--accent-text);
+      display: grid;
+      place-items: center;
+    }
+
+    .empty-title {
+      margin: 0;
+      font-size: 1.15rem;
+      font-weight: 750;
+      color: var(--text-primary);
+    }
+
+    .empty-text {
+      margin: 0;
+      max-width: 420px;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .empty-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.6rem;
+      margin-top: 0.4rem;
+    }
+
+    /* =========================================================================
+       8. MODALS (Add/Edit, Delete Confirmation, Import Choice)
+       ========================================================================= */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      background-color: rgba(15, 23, 42, 0.58);
+      backdrop-filter: blur(3px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity var(--transition-fast), visibility var(--transition-fast);
+    }
+
+    .modal-backdrop.is-open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal-dialog {
+      width: 100%;
+      max-width: 580px;
+      max-height: 92dvh;
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transform: translateY(10px) scale(0.98);
+      transition: transform var(--transition-fast);
+    }
+
+    .modal-backdrop.is-open .modal-dialog {
+      transform: translateY(0) scale(1);
+    }
+
+    .modal-dialog.modal-sm {
+      max-width: 440px;
+    }
+
+    .modal-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      flex-shrink: 0;
+    }
+
+    .modal-title {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 750;
+      color: var(--text-primary);
+    }
+
+    .modal-body {
+      padding: 1.15rem 1.25rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .modal-footer {
+      padding: 0.9rem 1.25rem;
+      border-top: 1px solid var(--border-subtle);
+      background-color: var(--bg-surface-subtle);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 0.6rem;
+      flex-shrink: 0;
+    }
+
+    /* Form Controls */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.9rem;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      min-width: 0;
+    }
+
+    .field-label {
+      font-size: 0.84rem;
+      font-weight: 650;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .field-required {
+      color: var(--danger);
+    }
+
+    .field-optional {
+      font-weight: 400;
+      font-size: 0.76rem;
+      color: var(--text-muted);
+    }
+
+    .form-input, .form-textarea {
+      width: 100%;
+      padding: 0.6rem 0.78rem;
+      background-color: var(--bg-input);
+      border: 1.5px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      font-size: 0.94rem;
+      color: var(--text-primary);
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .form-input {
+      min-height: 42px;
+    }
+
+    .form-textarea {
+      min-height: 76px;
+      resize: vertical;
+    }
+
+    .form-input:focus, .form-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    .field-hint {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* Photo Picker Slots in Modal */
+    .photo-upload-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.85rem;
+    }
+
+    .photo-slot {
+      border: 1.5px dashed var(--border-strong);
+      border-radius: var(--radius-md);
+      padding: 0.75rem;
+      background-color: var(--bg-surface-subtle);
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .photo-slot-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .photo-slot-title {
+      font-size: 0.83rem;
+      font-weight: 650;
+      color: var(--text-primary);
+    }
+
+    .photo-slot-preview {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .photo-slot-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      cursor: zoom-in;
+    }
+
+    .photo-slot-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+    }
+
+    .photo-slot-actions .btn {
+      flex: 1 1 100px;
+    }
+
+    /* Import Choice Cards */
+    .import-summary {
+      background-color: var(--bg-surface-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem 0.9rem;
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+    }
+
+    .import-summary strong {
+      color: var(--text-primary);
+    }
+
+    .import-options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .import-option-btn {
+      width: 100%;
+      text-align: left;
+      padding: 0.85rem 1rem;
+      border-radius: var(--radius-md);
+      border: 1.5px solid var(--border-strong);
+      background-color: var(--bg-surface);
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      transition: border-color var(--transition-fast), background-color var(--transition-fast);
+    }
+
+    .import-option-btn:hover {
+      border-color: var(--accent);
+      background-color: var(--accent-soft);
+    }
+
+    .import-option-btn.is-danger:hover {
+      border-color: var(--danger);
+      background-color: var(--danger-soft);
+    }
+
+    .import-option-title {
+      font-size: 0.94rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .import-option-btn.is-danger .import-option-title {
+      color: var(--danger);
+    }
+
+    .import-option-desc {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    /* =========================================================================
+       9. FULL-SCREEN PHOTO LIGHTBOX
+       ========================================================================= */
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      background-color: rgba(8, 12, 20, 0.92);
+      backdrop-filter: blur(6px);
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity var(--transition-fast), visibility var(--transition-fast);
+    }
+
+    .lightbox.is-open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .lightbox-bar {
+      padding: 0.85rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      color: #f8fafc;
+      background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6), transparent);
+    }
+
+    .lightbox-meta {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .lightbox-tag {
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #5eead4;
+    }
+
+    .lightbox-caption {
+      font-size: 1rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .lightbox-close {
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      color: #ffffff;
+      border-radius: var(--radius-sm);
+      min-width: 42px;
+      min-height: 42px;
+      display: grid;
+      place-items: center;
+    }
+
+    .lightbox-close:hover {
+      background: rgba(255, 255, 255, 0.24);
+    }
+
+    .lightbox-stage {
+      flex: 1;
+      min-height: 0;
+      padding: 0.75rem 1.25rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .lightbox-stage img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: var(--radius-md);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+    }
+
+    /* =========================================================================
+       10. TOAST NOTIFICATIONS
+       ========================================================================= */
+    .toast-container {
+      position: fixed;
+      z-index: 90;
+      right: 1rem;
+      bottom: 1rem;
+      left: 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.5rem;
+      pointer-events: none;
+    }
+
+    .toast {
+      pointer-events: auto;
+      max-width: 380px;
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius-md);
+      background-color: #0f172a;
+      color: #f8fafc;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: var(--shadow-md);
+      font-size: 0.875rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      animation: toast-in 200ms ease-out;
+    }
+
+    [data-theme="dark"] .toast {
+      background-color: #1e293b;
+      border-color: #334155;
+    }
+
+    .toast-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background-color: #14b8a6;
+    }
+
+    .toast.toast-error .toast-dot {
+      background-color: #f87171;
+    }
+
+    .toast.toast-warning .toast-dot {
+      background-color: #fbbf24;
+    }
+
+    .toast.is-leaving {
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 180ms ease, transform 180ms ease;
+    }
+
+    @keyframes toast-in {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* =========================================================================
+       11. RESPONSIVE BREAKPOINTS
+       ========================================================================= */
+    @media (min-width: 560px) {
+      .form-grid-two {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .photo-upload-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .toast-container {
+        left: auto;
+      }
+      .toast {
+        width: auto;
+        min-width: 260px;
+      }
+    }
+
+    @media (min-width: 680px) {
+      .header-inner {
+        padding: 0.9rem 1.5rem;
+      }
+      .main-container {
+        padding: 1.5rem 1.5rem 3.5rem;
+      }
+      .items-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1.05rem;
+      }
+    }
+
+    @media (min-width: 1060px) {
+      .items-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    /* Compact labels on very small screens so header stays tidy */
+    @media (max-width: 520px) {
+      .btn-label-sm-hide {
+        display: none;
+      }
+      .header-actions {
+        width: 100%;
+        justify-content: space-between;
+      }
+      .backup-status {
+        order: 5;
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- =======================================================================
+       HEADER / TOP NAVIGATION BAR
+       ======================================================================= -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 10.5L12 3l9 7.5V20a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 20v-9.5z"></path>
+            <circle cx="11.5" cy="13.5" r="3"></circle>
+            <path d="M13.8 15.8L16.5 18.5"></path>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1 class="brand-title">Where's that then?</h1>
+          <p class="brand-subtitle">Household item &amp; storage finder</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Last Backed Up Indicator -->
+        <div id="backupStatus" class="backup-status" title="JSON backup status">
+          <span id="backupDot" class="backup-dot" aria-hidden="true"></span>
+          <span id="backupStatusText">Not backed up yet</span>
+        </div>
+
+        <!-- Export JSON -->
+        <button type="button" id="exportBtn" class="btn btn-secondary" title="Export backup as JSON">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span class="btn-label-sm-hide">Export JSON</span>
+        </button>
+
+        <!-- Import JSON -->
+        <button type="button" id="importBtn" class="btn btn-secondary" title="Import JSON backup">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          <span class="btn-label-sm-hide">Import JSON</span>
+        </button>
+        <input type="file" id="importFileInput" accept=".json,application/json" hidden>
+
+        <!-- Theme Toggle -->
+        <button type="button" id="themeToggleBtn" class="btn btn-secondary btn-icon" aria-label="Switch to dark mode" title="Toggle light/dark mode">
+          <svg id="themeIconSun" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" hidden>
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <svg id="themeIconMoon" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+
+        <!-- Primary Add Item CTA -->
+        <button type="button" id="addItemBtn" class="btn btn-primary">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>Add Item</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- =======================================================================
+       MAIN CONTENT AREA
+       ======================================================================= -->
+  <main class="main-container">
+    <!-- Search, Filter, & Sort Controls -->
+    <section class="controls-panel" aria-label="Search and filter items">
+      <div class="search-wrapper">
+        <svg class="icon search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input
+          type="search"
+          id="searchInput"
+          class="search-input"
+          placeholder="Search object, room, place, person, or notes..."
+          aria-label="Search household items"
+          autocomplete="off"
+        >
+        <button type="button" id="searchClearBtn" class="search-clear-btn" aria-label="Clear search" hidden>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="filters-row">
+        <div class="filter-group">
+          <label for="roomFilter" class="sr-only">Filter by Room</label>
+          <select id="roomFilter" class="filter-select" aria-label="Filter by Room">
+            <option value="">All Rooms</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="personFilter" class="sr-only">Filter by Person</label>
+          <select id="personFilter" class="filter-select" aria-label="Filter by Person">
+            <option value="">All People</option>
+          </select>
+        </div>
+
+        <button type="button" id="photoFilterBtn" class="toggle-pill" aria-pressed="false">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+            <polyline points="21 15 16 10 5 21"></polyline>
+          </svg>
+          <span>Has Photo</span>
+        </button>
+
+        <div class="filter-group">
+          <label for="sortSelect" class="sr-only">Sort items</label>
+          <select id="sortSelect" class="filter-select" aria-label="Sort items">
+            <option value="newest">Sort: Newest First</option>
+            <option value="name">Sort: A–Z Name</option>
+            <option value="room">Sort: Room</option>
+          </select>
+        </div>
+
+        <button type="button" id="clearFiltersBtn" class="btn btn-ghost btn-sm" hidden>
+          Clear Filters
+        </button>
+      </div>
+
+      <div class="controls-meta">
+        <span id="itemCountBadge" class="count-badge">0 items</span>
+        <span id="storageModeNote" class="storage-note">Saved locally on this device</span>
+      </div>
+    </section>
+
+    <!-- Dynamic Item Cards Grid -->
+    <section id="itemsGrid" class="items-grid" aria-live="polite" aria-label="Tracked household items">
+      <!-- Populated dynamically by JavaScript -->
+    </section>
+  </main>
+
+  <!-- =======================================================================
+       MODAL: ADD / EDIT ITEM
+       ======================================================================= -->
+  <div id="itemModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="itemModalTitle" hidden>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2 id="itemModalTitle" class="modal-title">Add Item</h2>
+        <button type="button" class="btn btn-ghost btn-icon" data-close-modal="itemModal" aria-label="Close modal">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <form id="itemForm" novalidate style="display:flex; flex-direction:column; min-height:0; flex:1;">
+        <div class="modal-body">
+          <input type="hidden" id="itemIdInput">
+
+          <!-- Object Name (Required) -->
+          <div class="field">
+            <label for="itemNameInput" class="field-label">
+              Object Name <span class="field-required" aria-hidden="true">*</span>
+            </label>
+            <input
+              type="text"
+              id="itemNameInput"
+              class="form-input"
+              placeholder="e.g., Spare house keys, Christmas tree lights, Passport"
+              required
+              maxlength="140"
+              autocomplete="off"
+            >
+          </div>
+
+          <!-- Room & Person Row -->
+          <div class="form-grid form-grid-two">
+            <div class="field">
+              <label for="itemRoomInput" class="field-label">
+                Room <span class="field-optional">(optional)</span>
+              </label>
+              <input
+                type="text"
+                id="itemRoomInput"
+                class="form-input"
+                list="roomDatalist"
+                placeholder="e.g., Loft, Garage, Kitchen"
+                maxlength="80"
+                autocomplete="off"
+              >
+              <datalist id="roomDatalist"></datalist>
+            </div>
+
+            <div class="field">
+              <label for="itemPersonInput" class="field-label">
+                Person's Name <span class="field-optional">(optional)</span>
+              </label>
+              <input
+                type="text"
+                id="itemPersonInput"
+                class="form-input"
+                list="personDatalist"
+                placeholder="Who owns it or put it away"
+                maxlength="80"
+                autocomplete="off"
+              >
+              <datalist id="personDatalist"></datalist>
+            </div>
+          </div>
+
+          <!-- Place / Exact Spot -->
+          <div class="field">
+            <label for="itemPlaceInput" class="field-label">
+              Place / Exact Spot <span class="field-optional">(optional)</span>
+            </label>
+            <input
+              type="text"
+              id="itemPlaceInput"
+              class="form-input"
+              placeholder="e.g., Blue tub on top shelf, Left bedside drawer"
+              maxlength="180"
+              autocomplete="off"
+            >
+          </div>
+
+          <!-- Notes -->
+          <div class="field">
+            <label for="itemNotesInput" class="field-label">
+              Notes <span class="field-optional">(optional)</span>
+            </label>
+            <textarea
+              id="itemNotesInput"
+              class="form-textarea"
+              placeholder="Extra details, box label, or keywords to help you search later..."
+              maxlength="600"
+            ></textarea>
+          </div>
+
+          <!-- Photos: Object & Place -->
+          <div class="field">
+            <span class="field-label">
+              Photos <span class="field-optional">(optional — auto-resized for compact backups)</span>
+            </span>
+
+            <div class="photo-upload-grid">
+              <!-- Object Photo Slot -->
+              <div class="photo-slot">
+                <div class="photo-slot-header">
+                  <span class="photo-slot-title">Photo of Object</span>
+                  <button type="button" id="removeObjectPhotoBtn" class="btn btn-danger-soft btn-sm" hidden>
+                    Remove
+                  </button>
+                </div>
+
+                <div id="objectPhotoPreviewWrap" class="photo-slot-preview" hidden>
+                  <img id="objectPhotoPreviewImg" src="" alt="Preview of object photo">
+                </div>
+
+                <div class="photo-slot-actions">
+                  <button type="button" id="objectCameraBtn" class="btn btn-secondary btn-sm">
+                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                      <circle cx="12" cy="13" r="4"></circle>
+                    </svg>
+                    <span>Camera</span>
+                  </button>
+                  <button type="button" id="objectFileBtn" class="btn btn-secondary btn-sm">
+                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                      <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                      <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    <span>Pick File</span>
+                  </button>
+                </div>
+
+                <input type="file" id="objectCameraInput" accept="image/*" capture="environment" hidden>
+                <input type="file" id="objectFileInput" accept="image/*" hidden>
+              </div>
+
+              <!-- Place / Location Photo Slot -->
+              <div class="photo-slot">
+                <div class="photo-slot-header">
+                  <span class="photo-slot-title">Photo of Place / Spot</span>
+                  <button type="button" id="removePlacePhotoBtn" class="btn btn-danger-soft btn-sm" hidden>
+                    Remove
+                  </button>
+                </div>
+
+                <div id="placePhotoPreviewWrap" class="photo-slot-preview" hidden>
+                  <img id="placePhotoPreviewImg" src="" alt="Preview of place photo">
+                </div>
+
+                <div class="photo-slot-actions">
+                  <button type="button" id="placeCameraBtn" class="btn btn-secondary btn-sm">
+                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                      <circle cx="12" cy="13" r="4"></circle>
+                    </svg>
+                    <span>Camera</span>
+                  </button>
+                  <button type="button" id="placeFileBtn" class="btn btn-secondary btn-sm">
+                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                      <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                      <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    <span>Pick File</span>
+                  </button>
+                </div>
+
+                <input type="file" id="placeCameraInput" accept="image/*" capture="environment" hidden>
+                <input type="file" id="placeFileInput" accept="image/*" hidden>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-close-modal="itemModal">Cancel</button>
+          <button type="submit" id="saveItemBtn" class="btn btn-primary">Save Item</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =======================================================================
+       MODAL: DELETE CONFIRMATION
+       ======================================================================= -->
+  <div id="deleteModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle" hidden>
+    <div class="modal-dialog modal-sm">
+      <div class="modal-header">
+        <h2 id="deleteModalTitle" class="modal-title">Delete Item?</h2>
+        <button type="button" class="btn btn-ghost btn-icon" data-close-modal="deleteModal" aria-label="Close modal">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p style="margin:0; color:var(--text-secondary); font-size:0.94rem;">
+          Are you sure you want to remove <strong id="deleteItemName" style="color:var(--text-primary);"></strong>? This cannot be undone unless you have a JSON backup.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-close-modal="deleteModal">Cancel</button>
+        <button type="button" id="confirmDeleteBtn" class="btn btn-danger">Delete Item</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =======================================================================
+       MODAL: IMPORT JSON MODE (MERGE vs REPLACE)
+       ======================================================================= -->
+  <div id="importModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="importModalTitle" hidden>
+    <div class="modal-dialog modal-sm">
+      <div class="modal-header">
+        <h2 id="importModalTitle" class="modal-title">Import JSON Backup</h2>
+        <button type="button" class="btn btn-ghost btn-icon" data-close-modal="importModal" aria-label="Close modal">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="importSummary" class="import-summary"></div>
+
+        <div class="import-options">
+          <button type="button" id="importMergeBtn" class="import-option-btn">
+            <span class="import-option-title">Merge with existing items</span>
+            <span class="import-option-desc">Keep your current items, add new items from the backup, and update matching IDs.</span>
+          </button>
+
+          <button type="button" id="importReplaceBtn" class="import-option-btn is-danger">
+            <span class="import-option-title">Replace all existing items</span>
+            <span class="import-option-desc">Erase all current items on this device and restore strictly from the backup file.</span>
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-close-modal="importModal">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =======================================================================
+       FULL-SCREEN PHOTO LIGHTBOX
+       ======================================================================= -->
+  <div id="lightbox" class="lightbox" role="dialog" aria-modal="true" aria-label="Full-screen photo viewer" hidden>
+    <div class="lightbox-bar">
+      <div class="lightbox-meta">
+        <span id="lightboxTag" class="lightbox-tag">Object Photo</span>
+        <span id="lightboxCaption" class="lightbox-caption"></span>
+      </div>
+      <button type="button" id="lightboxCloseBtn" class="lightbox-close" aria-label="Close photo viewer">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <div id="lightboxStage" class="lightbox-stage">
+      <img id="lightboxImg" src="" alt="Full-screen item photo">
+    </div>
+  </div>
+
+  <!-- =======================================================================
+       TOAST NOTIFICATIONS
+       ======================================================================= -->
+  <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- =======================================================================
+       APPLICATION SCRIPT (Self-contained, Offline-first)
+       ======================================================================= -->
+  <script>
+    (function () {
+      'use strict';
+
+      /* =====================================================================
+         1. CONSTANTS & DEFAULT CONFIGURATION
+         ===================================================================== */
+      const APP_NAME = "Where's that then?";
+      const BACKUP_VERSION = 1;
+
+      const DB_NAME = 'WheresThatThenDB';
+      const DB_VERSION = 1;
+      const STORE_NAME = 'items';
+
+      const LS_ITEMS_FALLBACK_KEY = 'wtt_items_fallback_v1';
+      const LS_THEME_KEY = 'wtt_theme_v1';
+      const LS_LAST_BACKUP_KEY = 'wtt_last_backup_v1';
+      const LS_LAST_MODIFIED_KEY = 'wtt_last_modified_v1';
+
+      const DEFAULT_ROOMS = [
+        'Loft',
+        'Garage',
+        'Kitchen',
+        'Living Room',
+        'Bedroom',
+        'Shed',
+        'Utility',
+        'Under Stairs',
+        'Hallway',
+        'Bathroom',
+        'Office / Study',
+        'Spare Room'
+      ];
+
+      const IMAGE_MAX_DIMENSION = 800;
+      const IMAGE_JPEG_QUALITY = 0.72;
+
+      /* =====================================================================
+         2. STORAGE SERVICE (IndexedDB with automatic localStorage fallback)
+         ===================================================================== */
+      const StorageService = {
+        db: null,
+        usingFallback: false,
+
+        /**
+         * Initializes IndexedDB; falls back cleanly to localStorage on failure.
+         * @returns {Promise<boolean>} true if IndexedDB active, false if fallback
+         */
+        async init() {
+          if (!('indexedDB' in window)) {
+            this.usingFallback = true;
+            return false;
+          }
+
+          return new Promise((resolve) => {
+            try {
+              const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+              request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains(STORE_NAME)) {
+                  const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                  store.createIndex('updatedAt', 'updatedAt', { unique: false });
+                }
+              };
+
+              request.onsuccess = (event) => {
+                this.db = event.target.result;
+                this.db.onversionchange = () => {
+                  this.db.close();
+                };
+                this.usingFallback = false;
+                resolve(true);
+              };
+
+              request.onerror = () => {
+                this.usingFallback = true;
+                resolve(false);
+              };
+
+              request.onblocked = () => {
+                this.usingFallback = true;
+                resolve(false);
+              };
+            } catch (err) {
+              this.usingFallback = true;
+              resolve(false);
+            }
+          });
+        },
+
+        /** Reads all items from IndexedDB or localStorage fallback. */
+        async getAll() {
+          if (this.usingFallback || !this.db) {
+            return this._lsReadAll();
+          }
+          return new Promise((resolve, reject) => {
+            try {
+              const tx = this.db.transaction(STORE_NAME, 'readonly');
+              const store = tx.objectStore(STORE_NAME);
+              const req = store.getAll();
+              req.onsuccess = () => resolve(Array.isArray(req.result) ? req.result : []);
+              req.onerror = () => reject(req.error || new Error('Failed to load items'));
+            } catch (err) {
+              this.usingFallback = true;
+              resolve(this._lsReadAll());
+            }
+          });
+        },
+
+        /** Inserts or updates a single item. */
+        async put(item) {
+          if (this.usingFallback || !this.db) {
+            const all = this._lsReadAll();
+            const idx = all.findIndex((i) => i.id === item.id);
+            if (idx >= 0) {
+              all[idx] = item;
+            } else {
+              all.push(item);
+            }
+            this._lsWriteAll(all);
+            return item;
+          }
+          return new Promise((resolve, reject) => {
+            try {
+              const tx = this.db.transaction(STORE_NAME, 'readwrite');
+              const store = tx.objectStore(STORE_NAME);
+              store.put(item);
+              tx.oncomplete = () => resolve(item);
+              tx.onerror = () => reject(tx.error || new Error('Failed to save item'));
+            } catch (err) {
+              reject(err);
+            }
+          });
+        },
+
+        /** Bulk inserts or updates an array of items in one transaction. */
+        async bulkPut(items) {
+          if (this.usingFallback || !this.db) {
+            const all = this._lsReadAll();
+            const map = new Map(all.map((i) => [i.id, i]));
+            for (const item of items) {
+              map.set(item.id, item);
+            }
+            this._lsWriteAll(Array.from(map.values()));
+            return;
+          }
+          return new Promise((resolve, reject) => {
+            try {
+              const tx = this.db.transaction(STORE_NAME, 'readwrite');
+              const store = tx.objectStore(STORE_NAME);
+              for (const item of items) {
+                store.put(item);
+              }
+              tx.oncomplete = () => resolve();
+              tx.onerror = () => reject(tx.error || new Error('Failed to save imported items'));
+            } catch (err) {
+              reject(err);
+            }
+          });
+        },
+
+        /** Deletes a single item by ID. */
+        async delete(id) {
+          if (this.usingFallback || !this.db) {
+            const all = this._lsReadAll().filter((i) => i.id !== id);
+            this._lsWriteAll(all);
+            return;
+          }
+          return new Promise((resolve, reject) => {
+            try {
+              const tx = this.db.transaction(STORE_NAME, 'readwrite');
+              const store = tx.objectStore(STORE_NAME);
+              store.delete(id);
+              tx.oncomplete = () => resolve();
+              tx.onerror = () => reject(tx.error || new Error('Failed to delete item'));
+            } catch (err) {
+              reject(err);
+            }
+          });
+        },
+
+        /** Replaces all stored items cleanly in a single atomic transaction. */
+        async replaceAll(items) {
+          if (this.usingFallback || !this.db) {
+            this._lsWriteAll(items);
+            return;
+          }
+          return new Promise((resolve, reject) => {
+            try {
+              const tx = this.db.transaction(STORE_NAME, 'readwrite');
+              const store = tx.objectStore(STORE_NAME);
+              store.clear();
+              for (const item of items) {
+                store.put(item);
+              }
+              tx.oncomplete = () => resolve();
+              tx.onerror = () => reject(tx.error || new Error('Failed to replace items'));
+            } catch (err) {
+              reject(err);
+            }
+          });
+        },
+
+        _lsReadAll() {
+          try {
+            const raw = localStorage.getItem(LS_ITEMS_FALLBACK_KEY);
+            if (!raw) return [];
+            const parsed = JSON.parse(raw);
+            return Array.isArray(parsed) ? parsed : [];
+          } catch (err) {
+            return [];
+          }
+        },
+
+        _lsWriteAll(items) {
+          try {
+            localStorage.setItem(LS_ITEMS_FALLBACK_KEY, JSON.stringify(items));
+          } catch (err) {
+            throw new Error('Browser storage is full. Try exporting a JSON backup or removing large photos.');
+          }
+        }
+      };
+
+      /* =====================================================================
+         3. SAFE LOCALSTORAGE PREFERENCES HELPERS
+         ===================================================================== */
+      function getPref(key) {
+        try {
+          return localStorage.getItem(key);
+        } catch (err) {
+          return null;
+        }
+      }
+
+      function setPref(key, value) {
+        try {
+          localStorage.setItem(key, value);
+        } catch (err) {
+          // Ignore preference write errors in restricted contexts
+        }
+      }
+
+      /* =====================================================================
+         4. IMAGE RESIZING & COMPRESSION (HTML5 Canvas: max 800px, JPEG 0.72)
+         ===================================================================== */
+      /**
+       * Resizes and compresses an uploaded image File into a compact JPEG data URL.
+       * @param {File} file
+       * @returns {Promise<string>} Base64 JPEG data URL
+       */
+      function compressImageFile(file) {
+        return new Promise((resolve, reject) => {
+          if (!file || !file.type.startsWith('image/')) {
+            reject(new Error('Please select a valid image file.'));
+            return;
+          }
+
+          const reader = new FileReader();
+          reader.onerror = () => reject(new Error('Could not read the selected image file.'));
+
+          reader.onload = (event) => {
+            const img = new Image();
+            img.onerror = () => reject(new Error('Could not decode this image format.'));
+
+            img.onload = () => {
+              try {
+                let width = img.naturalWidth || img.width;
+                let height = img.naturalHeight || img.height;
+
+                // Scale down proportionally if either dimension exceeds 800px
+                if (width > IMAGE_MAX_DIMENSION || height > IMAGE_MAX_DIMENSION) {
+                  if (width >= height) {
+                    height = Math.round((height * IMAGE_MAX_DIMENSION) / width);
+                    width = IMAGE_MAX_DIMENSION;
+                  } else {
+                    width = Math.round((width * IMAGE_MAX_DIMENSION) / height);
+                    height = IMAGE_MAX_DIMENSION;
+                  }
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.max(1, width);
+                canvas.height = Math.max(1, height);
+
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                  reject(new Error('Image compression is not supported in this browser.'));
+                  return;
+                }
+
+                // Fill white backdrop so transparent PNGs convert cleanly to JPEG
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                const compressedDataUrl = canvas.toDataURL('image/jpeg', IMAGE_JPEG_QUALITY);
+                resolve(compressedDataUrl);
+              } catch (err) {
+                reject(new Error('Failed to process image.'));
+              }
+            };
+
+            img.src = event.target.result;
+          };
+
+          reader.readAsDataURL(file);
+        });
+      }
+
+      /* =====================================================================
+         5. UTILITY HELPERS
+         ===================================================================== */
+      function generateId() {
+        if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+          return crypto.randomUUID();
+        }
+        return 'item-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 9);
+      }
+
+      function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function isSafeImageDataUrl(value) {
+        return typeof value === 'string' && /^data:image\/(jpeg|jpg|png|webp|gif);base64,/i.test(value);
+      }
+
+      function getLocalDateStamp(date = new Date()) {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      }
+
+      function formatFriendlyDate(isoString) {
+        if (!isoString) return '';
+        const date = new Date(isoString);
+        if (Number.isNaN(date.getTime())) return '';
+
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+
+        const diffHours = Math.floor(diffMins / 60);
+        if (diffHours < 24 && date.getDate() === now.getDate()) {
+          return `${diffHours}h ago`;
+        }
+
+        const sameYear = date.getFullYear() === now.getFullYear();
+        try {
+          return date.toLocaleDateString(undefined, {
+            day: 'numeric',
+            month: 'short',
+            ...(sameYear ? {} : { year: 'numeric' })
+          });
+        } catch (err) {
+          return getLocalDateStamp(date);
+        }
+      }
+
+      /** Normalizes and validates an incoming item object (from form or JSON import). */
+      function sanitizeItem(raw) {
+        if (!raw || typeof raw !== 'object') return null;
+        const name = typeof raw.name === 'string' ? raw.name.trim() : '';
+        if (!name) return null;
+
+        const nowIso = new Date().toISOString();
+        const validUpdated = raw.updatedAt && !Number.isNaN(Date.parse(raw.updatedAt))
+          ? new Date(raw.updatedAt).toISOString()
+          : nowIso;
+        const validCreated = raw.createdAt && !Number.isNaN(Date.parse(raw.createdAt))
+          ? new Date(raw.createdAt).toISOString()
+          : validUpdated;
+
+        return {
+          id: (typeof raw.id === 'string' && raw.id.trim()) ? raw.id.trim() : generateId(),
+          name: name.slice(0, 140),
+          room: typeof raw.room === 'string' ? raw.room.trim().slice(0, 80) : '',
+          place: typeof raw.place === 'string' ? raw.place.trim().slice(0, 180) : '',
+          person: typeof raw.person === 'string' ? raw.person.trim().slice(0, 80) : '',
+          notes: typeof raw.notes === 'string' ? raw.notes.trim().slice(0, 600) : '',
+          objectPhoto: isSafeImageDataUrl(raw.objectPhoto) ? raw.objectPhoto : '',
+          placePhoto: isSafeImageDataUrl(raw.placePhoto) ? raw.placePhoto : '',
+          createdAt: validCreated,
+          updatedAt: validUpdated
+        };
+      }
+
+      /* =====================================================================
+         6. APPLICATION STATE & DOM REFERENCES
+         ===================================================================== */
+      const state = {
+        items: [],
+        search: '',
+        roomFilter: '',
+        personFilter: '',
+        hasPhotoOnly: false,
+        sortBy: 'newest',
+        editingId: null,
+        draftObjectPhoto: '',
+        draftPlacePhoto: '',
+        pendingDeleteId: null,
+        pendingImport: null // { fileName, exportedAt, items }
+      };
+
+      const dom = {
+        // Header
+        backupStatus: document.getElementById('backupStatus'),
+        backupDot: document.getElementById('backupDot'),
+        backupStatusText: document.getElementById('backupStatusText'),
+        exportBtn: document.getElementById('exportBtn'),
+        importBtn: document.getElementById('importBtn'),
+        importFileInput: document.getElementById('importFileInput'),
+        themeToggleBtn: document.getElementById('themeToggleBtn'),
+        themeIconSun: document.getElementById('themeIconSun'),
+        themeIconMoon: document.getElementById('themeIconMoon'),
+        addItemBtn: document.getElementById('addItemBtn'),
+
+        // Controls
+        searchInput: document.getElementById('searchInput'),
+        searchClearBtn: document.getElementById('searchClearBtn'),
+        roomFilter: document.getElementById('roomFilter'),
+        personFilter: document.getElementById('personFilter'),
+        photoFilterBtn: document.getElementById('photoFilterBtn'),
+        sortSelect: document.getElementById('sortSelect'),
+        clearFiltersBtn: document.getElementById('clearFiltersBtn'),
+        itemCountBadge: document.getElementById('itemCountBadge'),
+        storageModeNote: document.getElementById('storageModeNote'),
+
+        // Grid
+        itemsGrid: document.getElementById('itemsGrid'),
+
+        // Add/Edit Modal
+        itemModal: document.getElementById('itemModal'),
+        itemModalTitle: document.getElementById('itemModalTitle'),
+        itemForm: document.getElementById('itemForm'),
+        itemIdInput: document.getElementById('itemIdInput'),
+        itemNameInput: document.getElementById('itemNameInput'),
+        itemRoomInput: document.getElementById('itemRoomInput'),
+        itemPersonInput: document.getElementById('itemPersonInput'),
+        itemPlaceInput: document.getElementById('itemPlaceInput'),
+        itemNotesInput: document.getElementById('itemNotesInput'),
+        roomDatalist: document.getElementById('roomDatalist'),
+        personDatalist: document.getElementById('personDatalist'),
+        saveItemBtn: document.getElementById('saveItemBtn'),
+
+        // Photo Inputs & Previews
+        objectPhotoPreviewWrap: document.getElementById('objectPhotoPreviewWrap'),
+        objectPhotoPreviewImg: document.getElementById('objectPhotoPreviewImg'),
+        removeObjectPhotoBtn: document.getElementById('removeObjectPhotoBtn'),
+        objectCameraBtn: document.getElementById('objectCameraBtn'),
+        objectFileBtn: document.getElementById('objectFileBtn'),
+        objectCameraInput: document.getElementById('objectCameraInput'),
+        objectFileInput: document.getElementById('objectFileInput'),
+
+        placePhotoPreviewWrap: document.getElementById('placePhotoPreviewWrap'),
+        placePhotoPreviewImg: document.getElementById('placePhotoPreviewImg'),
+        removePlacePhotoBtn: document.getElementById('removePlacePhotoBtn'),
+        placeCameraBtn: document.getElementById('placeCameraBtn'),
+        placeFileBtn: document.getElementById('placeFileBtn'),
+        placeCameraInput: document.getElementById('placeCameraInput'),
+        placeFileInput: document.getElementById('placeFileInput'),
+
+        // Delete Modal
+        deleteModal: document.getElementById('deleteModal'),
+        deleteItemName: document.getElementById('deleteItemName'),
+        confirmDeleteBtn: document.getElementById('confirmDeleteBtn'),
+
+        // Import Modal
+        importModal: document.getElementById('importModal'),
+        importSummary: document.getElementById('importSummary'),
+        importMergeBtn: document.getElementById('importMergeBtn'),
+        importReplaceBtn: document.getElementById('importReplaceBtn'),
+
+        // Lightbox
+        lightbox: document.getElementById('lightbox'),
+        lightboxTag: document.getElementById('lightboxTag'),
+        lightboxCaption: document.getElementById('lightboxCaption'),
+        lightboxImg: document.getElementById('lightboxImg'),
+        lightboxCloseBtn: document.getElementById('lightboxCloseBtn'),
+        lightboxStage: document.getElementById('lightboxStage'),
+
+        // Toast Container
+        toastContainer: document.getElementById('toastContainer')
+      };
+
+      /* =====================================================================
+         7. TOAST NOTIFICATION SYSTEM
+         ===================================================================== */
+      function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `toast${type === 'error' ? ' toast-error' : type === 'warning' ? ' toast-warning' : ''}`;
+        toast.innerHTML = `<span class="toast-dot" aria-hidden="true"></span><span>${escapeHtml(message)}</span>`;
+        dom.toastContainer.appendChild(toast);
+
+        const duration = type === 'error' ? 4200 : 2800;
+        window.setTimeout(() => {
+          toast.classList.add('is-leaving');
+          window.setTimeout(() => {
+            if (toast.parentNode) toast.parentNode.removeChild(toast);
+          }, 200);
+        }, duration);
+      }
+
+      /* =====================================================================
+         8. THEME MANAGEMENT (Light / Dark Mode)
+         ===================================================================== */
+      function applyTheme(theme) {
+        const isDark = theme === 'dark';
+        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+        dom.themeIconSun.hidden = !isDark;
+        dom.themeIconMoon.hidden = isDark;
+        dom.themeToggleBtn.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+      }
+
+      function initTheme() {
+        const saved = getPref(LS_THEME_KEY);
+        if (saved === 'dark' || saved === 'light') {
+          applyTheme(saved);
+        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          applyTheme('dark');
+        } else {
+          applyTheme('light');
+        }
+      }
+
+      function toggleTheme() {
+        const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+        const next = current === 'dark' ? 'light' : 'dark';
+        applyTheme(next);
+        setPref(LS_THEME_KEY, next);
+      }
+
+      /* =====================================================================
+         9. BACKUP STATUS INDICATOR
+         ===================================================================== */
+      function markDataModified() {
+        setPref(LS_LAST_MODIFIED_KEY, new Date().toISOString());
+        updateBackupIndicator();
+      }
+
+      function updateBackupIndicator() {
+        const lastBackup = getPref(LS_LAST_BACKUP_KEY);
+        const lastModified = getPref(LS_LAST_MODIFIED_KEY);
+
+        dom.backupDot.className = 'backup-dot';
+
+        if (!lastBackup) {
+          dom.backupStatusText.textContent = state.items.length > 0
+            ? 'Not backed up yet'
+            : 'No backups yet';
+          if (state.items.length > 0) {
+            dom.backupDot.classList.add('is-stale');
+          }
+          dom.backupStatus.title = 'Export a JSON file to back up your items';
+          return;
+        }
+
+        const backupDate = new Date(lastBackup);
+        const friendly = formatFriendlyDate(lastBackup);
+        const hasUnsavedChanges = lastModified && Date.parse(lastModified) > Date.parse(lastBackup);
+
+        if (hasUnsavedChanges) {
+          dom.backupDot.classList.add('is-stale');
+          dom.backupStatusText.textContent = `Backed up ${friendly} (changes made)`;
+        } else {
+          dom.backupDot.classList.add('is-fresh');
+          dom.backupStatusText.textContent = `Backed up ${friendly}`;
+        }
+
+        dom.backupStatus.title = `Last JSON export: ${backupDate.toLocaleString()}`;
+      }
+
+      /* =====================================================================
+         10. AUTOCOMPLETE DATALISTS & FILTER DROPDOWNS
+         ===================================================================== */
+      function refreshDatalistsAndFilters() {
+        // Collect unique rooms (existing items + defaults for datalist)
+        const existingRoomsSet = new Set();
+        const existingPeopleSet = new Set();
+
+        for (const item of state.items) {
+          if (item.room) existingRoomsSet.add(item.room);
+          if (item.person) existingPeopleSet.add(item.person);
+        }
+
+        // 1. Datalist for Room input (defaults + custom)
+        const allRoomsForDatalist = Array.from(new Set([...DEFAULT_ROOMS, ...existingRoomsSet]))
+          .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+        dom.roomDatalist.innerHTML = allRoomsForDatalist
+          .map((room) => `<option value="${escapeHtml(room)}"></option>`)
+          .join('');
+
+        // 2. Datalist for Person input (from previously entered names)
+        const allPeople = Array.from(existingPeopleSet)
+          .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+        dom.personDatalist.innerHTML = allPeople
+          .map((person) => `<option value="${escapeHtml(person)}"></option>`)
+          .join('');
+
+        // 3. Room Filter Dropdown (from existing items only)
+        const sortedExistingRooms = Array.from(existingRoomsSet)
+          .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+        const prevRoom = state.roomFilter;
+        dom.roomFilter.innerHTML = '<option value="">All Rooms</option>' +
+          sortedExistingRooms.map((r) => `<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join('');
+        if (prevRoom && existingRoomsSet.has(prevRoom)) {
+          dom.roomFilter.value = prevRoom;
+        } else {
+          state.roomFilter = '';
+          dom.roomFilter.value = '';
+        }
+
+        // 4. Person Filter Dropdown (from existing items only)
+        const prevPerson = state.personFilter;
+        dom.personFilter.innerHTML = '<option value="">All People</option>' +
+          allPeople.map((p) => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
+        if (prevPerson && existingPeopleSet.has(prevPerson)) {
+          dom.personFilter.value = prevPerson;
+        } else {
+          state.personFilter = '';
+          dom.personFilter.value = '';
+        }
+      }
+
+      /* =====================================================================
+         11. FILTERING, SEARCHING, SORTING & RENDERING
+         ===================================================================== */
+      function getFilteredAndSortedItems() {
+        const query = state.search.trim().toLowerCase();
+        // Support multi-word search (e.g. "loft lights" matches across name + room)
+        const queryTokens = query ? query.split(/\s+/).filter(Boolean) : [];
+
+        const filtered = state.items.filter((item) => {
+          if (state.roomFilter && item.room !== state.roomFilter) return false;
+          if (state.personFilter && item.person !== state.personFilter) return false;
+          if (state.hasPhotoOnly && !item.objectPhoto && !item.placePhoto) return false;
+
+          if (queryTokens.length > 0) {
+            const haystack = [item.name, item.room, item.place, item.person, item.notes]
+              .join(' ')
+              .toLowerCase();
+            for (const token of queryTokens) {
+              if (!haystack.includes(token)) return false;
+            }
+          }
+          return true;
+        });
+
+        // Apply selected sorting
+        filtered.sort((a, b) => {
+          if (state.sortBy === 'name') {
+            return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+          }
+          if (state.sortBy === 'room') {
+            const roomA = a.room || '\uffff'; // Sort items without room to bottom
+            const roomB = b.room || '\uffff';
+            const roomCmp = roomA.localeCompare(roomB, undefined, { sensitivity: 'base' });
+            if (roomCmp !== 0) return roomCmp;
+            return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+          }
+          // Default: Newest First (by updatedAt descending)
+          return Date.parse(b.updatedAt || 0) - Date.parse(a.updatedAt || 0);
+        });
+
+        return filtered;
+      }
+
+      function hasActiveFilters() {
+        return Boolean(state.search.trim() || state.roomFilter || state.personFilter || state.hasPhotoOnly);
+      }
+
+      function renderItems() {
+        const visibleItems = getFilteredAndSortedItems();
+        const totalCount = state.items.length;
+        const visibleCount = visibleItems.length;
+        const filtersActive = hasActiveFilters();
+
+        // Update search clear & clear filters buttons
+        dom.searchClearBtn.hidden = state.search.length === 0;
+        dom.clearFiltersBtn.hidden = !filtersActive;
+
+        // Update live item count badge
+        if (filtersActive) {
+          dom.itemCountBadge.textContent = `Showing ${visibleCount} of ${totalCount} ${totalCount === 1 ? 'item' : 'items'}`;
+        } else {
+          dom.itemCountBadge.textContent = `${totalCount} ${totalCount === 1 ? 'item' : 'items'}`;
+        }
+
+        // Empty state: No items saved yet
+        if (totalCount === 0) {
+          dom.itemsGrid.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon" aria-hidden="true">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                  <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                </svg>
+              </div>
+              <h2 class="empty-title">Nothing tracked yet</h2>
+              <p class="empty-text">
+                Putting something away? Log the item, room, exact spot, and an optional photo so you never have to ask "Where's that then?" again.
+              </p>
+              <div class="empty-actions">
+                <button type="button" class="btn btn-primary" id="emptyAddBtn">
+                  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  <span>Add Your First Item</span>
+                </button>
+                <button type="button" class="btn btn-secondary" id="loadSamplesBtn">
+                  Try 4 Sample Items
+                </button>
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        // Empty state: No items match active search/filters
+        if (visibleCount === 0) {
+          dom.itemsGrid.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon" aria-hidden="true">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+              </div>
+              <h2 class="empty-title">No matching items found</h2>
+              <p class="empty-text">
+                Try a different keyword or clear your active filters to see all ${totalCount} saved ${totalCount === 1 ? 'item' : 'items'}.
+              </p>
+              <div class="empty-actions">
+                <button type="button" class="btn btn-secondary" id="emptyResetFiltersBtn">Clear Filters</button>
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        // Render item cards
+        dom.itemsGrid.innerHTML = visibleItems.map(buildItemCardHtml).join('');
+      }
+
+      /** Builds HTML markup for an individual item card. */
+      function buildItemCardHtml(item) {
+        const hasBadges = Boolean(item.room || item.person);
+        const hasPhotos = Boolean(item.objectPhoto || item.placePhoto);
+        const photoCount = (item.objectPhoto ? 1 : 0) + (item.placePhoto ? 1 : 0);
+
+        const roomBadge = item.room ? `
+          <span class="badge badge-room" title="Room: ${escapeHtml(item.room)}">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z"></path>
+            </svg>
+            <span>${escapeHtml(item.room)}</span>
+          </span>
+        ` : '';
+
+        const personBadge = item.person ? `
+          <span class="badge badge-person" title="Person: ${escapeHtml(item.person)}">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span>${escapeHtml(item.person)}</span>
+          </span>
+        ` : '';
+
+        const placeHtml = item.place ? `
+          <div class="place-box">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+            <span>${escapeHtml(item.place)}</span>
+          </div>
+        ` : '';
+
+        const notesHtml = item.notes
+          ? `<p class="card-notes">${escapeHtml(item.notes)}</p>`
+          : '';
+
+        let photosHtml = '';
+        if (hasPhotos) {
+          const objThumb = item.objectPhoto ? `
+            <button type="button" class="photo-thumb-btn" data-action="lightbox" data-id="${escapeHtml(item.id)}" data-photo-type="object" aria-label="View object photo of ${escapeHtml(item.name)}">
+              <img src="${item.objectPhoto}" alt="Object photo of ${escapeHtml(item.name)}" loading="lazy">
+              <span class="photo-thumb-label">Object</span>
+            </button>
+          ` : '';
+
+          const placeThumb = item.placePhoto ? `
+            <button type="button" class="photo-thumb-btn" data-action="lightbox" data-id="${escapeHtml(item.id)}" data-photo-type="place" aria-label="View place photo for ${escapeHtml(item.name)}">
+              <img src="${item.placePhoto}" alt="Place photo for ${escapeHtml(item.name)}" loading="lazy">
+              <span class="photo-thumb-label">Place</span>
+            </button>
+          ` : '';
+
+          photosHtml = `
+            <div class="card-photos${photoCount === 1 ? ' single-photo' : ''}">
+              ${objThumb}${placeThumb}
+            </div>
+          `;
+        }
+
+        const updatedLabel = formatFriendlyDate(item.updatedAt);
+
+        return `
+          <article class="item-card" data-id="${escapeHtml(item.id)}">
+            <div class="card-header">
+              <h3 class="card-title">${escapeHtml(item.name)}</h3>
+              <div class="card-actions">
+                <button type="button" class="btn btn-ghost btn-sm btn-icon" data-action="edit" data-id="${escapeHtml(item.id)}" aria-label="Edit ${escapeHtml(item.name)}" title="Edit item">
+                  <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm btn-icon" data-action="delete" data-id="${escapeHtml(item.id)}" aria-label="Delete ${escapeHtml(item.name)}" title="Delete item">
+                  <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            ${hasBadges ? `<div class="badges-row">${roomBadge}${personBadge}</div>` : ''}
+            ${placeHtml}
+            ${notesHtml}
+            ${photosHtml}
+
+            <div class="card-footer">
+              <span>Updated ${escapeHtml(updatedLabel)}</span>
+            </div>
+          </article>
+        `;
+      }
+
+      /* =====================================================================
+         12. MODAL HELPERS
+         ===================================================================== */
+      function openModal(modalEl) {
+        modalEl.hidden = false;
+        // Trigger transition on next animation frame
+        requestAnimationFrame(() => {
+          modalEl.classList.add('is-open');
+        });
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeModal(modalEl) {
+        modalEl.classList.remove('is-open');
+        window.setTimeout(() => {
+          if (!modalEl.classList.contains('is-open')) {
+            modalEl.hidden = true;
+          }
+          // Restore scrolling if no overlays remain open
+          const anyOpen = document.querySelector('.modal-backdrop.is-open, .lightbox.is-open');
+          if (!anyOpen) {
+            document.body.style.overflow = '';
+          }
+        }, 160);
+      }
+
+      /* =====================================================================
+         13. ADD / EDIT ITEM MODAL & PHOTO HANDLERS
+         ===================================================================== */
+      function updateDraftPhotoUI(type) {
+        const isObject = type === 'object';
+        const dataUrl = isObject ? state.draftObjectPhoto : state.draftPlacePhoto;
+        const wrap = isObject ? dom.objectPhotoPreviewWrap : dom.placePhotoPreviewWrap;
+        const img = isObject ? dom.objectPhotoPreviewImg : dom.placePhotoPreviewImg;
+        const removeBtn = isObject ? dom.removeObjectPhotoBtn : dom.removePlacePhotoBtn;
+
+        if (dataUrl) {
+          img.src = dataUrl;
+          wrap.hidden = false;
+          removeBtn.hidden = false;
+        } else {
+          img.removeAttribute('src');
+          wrap.hidden = true;
+          removeBtn.hidden = true;
+        }
+      }
+
+      function openAddEditModal(item = null) {
+        dom.itemForm.reset();
+
+        if (item) {
+          state.editingId = item.id;
+          dom.itemModalTitle.textContent = 'Edit Item';
+          dom.saveItemBtn.textContent = 'Save Changes';
+          dom.itemIdInput.value = item.id;
+          dom.itemNameInput.value = item.name;
+          dom.itemRoomInput.value = item.room;
+          dom.itemPersonInput.value = item.person;
+          dom.itemPlaceInput.value = item.place;
+          dom.itemNotesInput.value = item.notes;
+          state.draftObjectPhoto = item.objectPhoto || '';
+          state.draftPlacePhoto = item.placePhoto || '';
+        } else {
+          state.editingId = null;
+          dom.itemModalTitle.textContent = 'Add Item';
+          dom.saveItemBtn.textContent = 'Save Item';
+          dom.itemIdInput.value = '';
+          state.draftObjectPhoto = '';
+          state.draftPlacePhoto = '';
+        }
+
+        updateDraftPhotoUI('object');
+        updateDraftPhotoUI('place');
+        openModal(dom.itemModal);
+
+        window.setTimeout(() => {
+          dom.itemNameInput.focus();
+        }, 60);
+      }
+
+      async function handlePhotoSelected(fileInput, type) {
+        const file = fileInput.files && fileInput.files[0];
+        fileInput.value = ''; // Allow selecting same file again if needed
+        if (!file) return;
+
+        try {
+          dom.saveItemBtn.disabled = true;
+          const compressed = await compressImageFile(file);
+          if (type === 'object') {
+            state.draftObjectPhoto = compressed;
+          } else {
+            state.draftPlacePhoto = compressed;
+          }
+          updateDraftPhotoUI(type);
+          showToast(`${type === 'object' ? 'Object' : 'Place'} photo attached and compressed.`);
+        } catch (err) {
+          showToast(err.message || 'Could not process image.', 'error');
+        } finally {
+          dom.saveItemBtn.disabled = false;
+        }
+      }
+
+      async function handleItemFormSubmit(event) {
+        event.preventDefault();
+
+        const name = dom.itemNameInput.value.trim();
+        if (!name) {
+          showToast('Please enter an Object Name.', 'warning');
+          dom.itemNameInput.focus();
+          return;
+        }
+
+        const nowIso = new Date().toISOString();
+        const existing = state.editingId
+          ? state.items.find((i) => i.id === state.editingId)
+          : null;
+
+        const item = {
+          id: existing ? existing.id : generateId(),
+          name: name.slice(0, 140),
+          room: dom.itemRoomInput.value.trim().slice(0, 80),
+          place: dom.itemPlaceInput.value.trim().slice(0, 180),
+          person: dom.itemPersonInput.value.trim().slice(0, 80),
+          notes: dom.itemNotesInput.value.trim().slice(0, 600),
+          objectPhoto: state.draftObjectPhoto || '',
+          placePhoto: state.draftPlacePhoto || '',
+          createdAt: existing ? existing.createdAt : nowIso,
+          updatedAt: nowIso
+        };
+
+        try {
+          dom.saveItemBtn.disabled = true;
+          await StorageService.put(item);
+
+          if (existing) {
+            const idx = state.items.findIndex((i) => i.id === item.id);
+            if (idx >= 0) state.items[idx] = item;
+            showToast(`Updated "${item.name}".`);
+          } else {
+            state.items.unshift(item);
+            showToast(`Saved "${item.name}".`);
+          }
+
+          markDataModified();
+          refreshDatalistsAndFilters();
+          renderItems();
+          closeModal(dom.itemModal);
+        } catch (err) {
+          showToast(err.message || 'Could not save item.', 'error');
+        } finally {
+          dom.saveItemBtn.disabled = false;
+        }
+      }
+
+      /* =====================================================================
+         14. DELETE CONFIRMATION FLOW
+         ===================================================================== */
+      function openDeleteModal(id) {
+        const item = state.items.find((i) => i.id === id);
+        if (!item) return;
+
+        state.pendingDeleteId = id;
+        dom.deleteItemName.textContent = `"${item.name}"`;
+        openModal(dom.deleteModal);
+      }
+
+      async function confirmDeleteItem() {
+        const id = state.pendingDeleteId;
+        if (!id) return;
+
+        const item = state.items.find((i) => i.id === id);
+        try {
+          dom.confirmDeleteBtn.disabled = true;
+          await StorageService.delete(id);
+          state.items = state.items.filter((i) => i.id !== id);
+          state.pendingDeleteId = null;
+
+          markDataModified();
+          refreshDatalistsAndFilters();
+          renderItems();
+          closeModal(dom.deleteModal);
+          showToast(`Deleted "${item ? item.name : 'item'}".`);
+        } catch (err) {
+          showToast(err.message || 'Failed to delete item.', 'error');
+        } finally {
+          dom.confirmDeleteBtn.disabled = false;
+        }
+      }
+
+      /* =====================================================================
+         15. LIGHTBOX VIEWER
+         ===================================================================== */
+      function openLightbox(imageSrc, tagLabel, captionText) {
+        if (!imageSrc) return;
+        dom.lightboxImg.src = imageSrc;
+        dom.lightboxTag.textContent = tagLabel;
+        dom.lightboxCaption.textContent = captionText || '';
+        dom.lightbox.hidden = false;
+        requestAnimationFrame(() => {
+          dom.lightbox.classList.add('is-open');
+        });
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeLightbox() {
+        dom.lightbox.classList.remove('is-open');
+        window.setTimeout(() => {
+          if (!dom.lightbox.classList.contains('is-open')) {
+            dom.lightbox.hidden = true;
+            dom.lightboxImg.removeAttribute('src');
+          }
+          const anyModalOpen = document.querySelector('.modal-backdrop.is-open');
+          if (!anyModalOpen) {
+            document.body.style.overflow = '';
+          }
+        }, 160);
+      }
+
+      /* =====================================================================
+         16. JSON BACKUP EXPORT & IMPORT (MERGE / REPLACE)
+         ===================================================================== */
+      function exportBackupJson() {
+        try {
+          const now = new Date();
+          const payload = {
+            app: APP_NAME,
+            version: BACKUP_VERSION,
+            exportedAt: now.toISOString(),
+            itemCount: state.items.length,
+            items: state.items
+          };
+
+          const jsonString = JSON.stringify(payload, null, 2);
+          const blob = new Blob([jsonString], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+
+          const filename = `wheres-that-then-backup-${getLocalDateStamp(now)}.json`;
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+          setPref(LS_LAST_BACKUP_KEY, now.toISOString());
+          updateBackupIndicator();
+          showToast(`Exported ${state.items.length} ${state.items.length === 1 ? 'item' : 'items'} to ${filename}.`);
+        } catch (err) {
+          showToast('Failed to export JSON backup.', 'error');
+        }
+      }
+
+      function handleImportFileSelected(event) {
+        const file = event.target.files && event.target.files[0];
+        event.target.value = ''; // Reset input so same file can be re-imported
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onerror = () => showToast('Could not read the selected JSON file.', 'error');
+
+        reader.onload = (e) => {
+          try {
+            const parsed = JSON.parse(e.target.result);
+            let rawItems = null;
+            let exportedAt = null;
+
+            if (Array.isArray(parsed)) {
+              rawItems = parsed;
+            } else if (parsed && typeof parsed === 'object' && Array.isArray(parsed.items)) {
+              rawItems = parsed.items;
+              exportedAt = parsed.exportedAt || null;
+            } else {
+              throw new Error('Invalid backup structure. Expected a "Where\'s that then?" JSON backup file.');
+            }
+
+            const validItems = [];
+            let skipped = 0;
+            for (const entry of rawItems) {
+              const clean = sanitizeItem(entry);
+              if (clean) {
+                validItems.push(clean);
+              } else {
+                skipped++;
+              }
+            }
+
+            if (validItems.length === 0 && rawItems.length > 0) {
+              throw new Error('No valid items were found in this JSON file.');
+            }
+
+            state.pendingImport = {
+              fileName: file.name,
+              exportedAt,
+              items: validItems,
+              skipped
+            };
+
+            const exportedNote = exportedAt && !Number.isNaN(Date.parse(exportedAt))
+              ? `<br>Backup date: <strong>${escapeHtml(new Date(exportedAt).toLocaleString())}</strong>`
+              : '';
+            const skippedNote = skipped > 0
+              ? `<br><span style="color:var(--warning);">${skipped} invalid ${skipped === 1 ? 'entry' : 'entries'} will be skipped.</span>`
+              : '';
+
+            dom.importSummary.innerHTML = `
+              File: <strong>${escapeHtml(file.name)}</strong><br>
+              Valid items found: <strong>${validItems.length}</strong>${exportedNote}${skippedNote}
+            `;
+
+            openModal(dom.importModal);
+          } catch (err) {
+            showToast(err.message || 'Invalid JSON file.', 'error');
+          }
+        };
+
+        reader.readAsText(file);
+      }
+
+      async function executeImport(mode) {
+        if (!state.pendingImport) return;
+        const incoming = state.pendingImport.items;
+
+        try {
+          dom.importMergeBtn.disabled = true;
+          dom.importReplaceBtn.disabled = true;
+
+          if (mode === 'replace') {
+            await StorageService.replaceAll(incoming);
+            state.items = [...incoming];
+            showToast(`Replaced all items with ${incoming.length} ${incoming.length === 1 ? 'item' : 'items'} from backup.`);
+          } else {
+            // Merge: update matching IDs, add new items
+            const existingMap = new Map(state.items.map((i) => [i.id, i]));
+            let added = 0;
+            let updated = 0;
+
+            for (const item of incoming) {
+              if (existingMap.has(item.id)) {
+                updated++;
+              } else {
+                added++;
+              }
+              existingMap.set(item.id, item);
+            }
+
+            await StorageService.bulkPut(incoming);
+            state.items = Array.from(existingMap.values());
+            showToast(`Merged backup: ${added} added, ${updated} updated.`);
+          }
+
+          state.pendingImport = null;
+          markDataModified();
+          refreshDatalistsAndFilters();
+          renderItems();
+          closeModal(dom.importModal);
+        } catch (err) {
+          showToast(err.message || 'Import failed.', 'error');
+        } finally {
+          dom.importMergeBtn.disabled = false;
+          dom.importReplaceBtn.disabled = false;
+        }
+      }
+
+      /* =====================================================================
+         17. SAMPLE ITEMS HELPER (Only offered when database is empty)
+         ===================================================================== */
+      async function loadSampleItems() {
+        const now = Date.now();
+        const samples = [
+          {
+            id: generateId(),
+            name: 'Christmas Tree Lights & Star',
+            room: 'Loft',
+            place: 'Clear plastic tub with red lid near the hatch',
+            person: 'Sarah',
+            notes: 'Warm white LEDs + spare fuse pack taped inside lid.',
+            objectPhoto: '',
+            placePhoto: '',
+            createdAt: new Date(now - 3600000 * 50).toISOString(),
+            updatedAt: new Date(now - 3600000 * 2).toISOString()
+          },
+          {
+            id: generateId(),
+            name: 'Spare Front Door & Shed Keys',
+            room: 'Kitchen',
+            place: 'Small ceramic dish inside top-left spice cupboard',
+            person: 'Tom',
+            notes: 'Green key tag is for the garden shed padlock.',
+            objectPhoto: '',
+            placePhoto: '',
+            createdAt: new Date(now - 3600000 * 40).toISOString(),
+            updatedAt: new Date(now - 3600000 * 5).toISOString()
+          },
+          {
+            id: generateId(),
+            name: 'Passports & Travel Insurance Folder',
+            room: 'Bedroom',
+            place: 'Zippered grey document pouch, bottom right wardrobe drawer',
+            person: 'Family',
+            notes: 'Also contains EHIC / GHIC cards and driving licence copies.',
+            objectPhoto: '',
+            placePhoto: '',
+            createdAt: new Date(now - 3600000 * 30).toISOString(),
+            updatedAt: new Date(now - 3600000 * 12).toISOString()
+          },
+          {
+            id: generateId(),
+            name: 'Cordless Drill & Masonry Bits',
+            room: 'Garage',
+            place: 'Black carry case on middle metal shelving rack',
+            person: 'Tom',
+            notes: 'Charger is plugged into the extension lead beside the workbench.',
+            objectPhoto: '',
+            placePhoto: '',
+            createdAt: new Date(now - 3600000 * 20).toISOString(),
+            updatedAt: new Date(now - 3600000 * 18).toISOString()
+          }
+        ];
+
+        try {
+          await StorageService.bulkPut(samples);
+          state.items = samples;
+          markDataModified();
+          refreshDatalistsAndFilters();
+          renderItems();
+          showToast('Added 4 sample household items.');
+        } catch (err) {
+          showToast('Could not add sample items.', 'error');
+        }
+      }
+
+      /* =====================================================================
+         18. CLEAR FILTERS
+         ===================================================================== */
+      function clearAllFilters() {
+        state.search = '';
+        state.roomFilter = '';
+        state.personFilter = '';
+        state.hasPhotoOnly = false;
+
+        dom.searchInput.value = '';
+        dom.roomFilter.value = '';
+        dom.personFilter.value = '';
+        dom.photoFilterBtn.setAttribute('aria-pressed', 'false');
+
+        renderItems();
+      }
+
+      /* =====================================================================
+         19. EVENT WIRING
+         ===================================================================== */
+      function bindEvents() {
+        // Header buttons
+        dom.addItemBtn.addEventListener('click', () => openAddEditModal(null));
+        dom.themeToggleBtn.addEventListener('click', toggleTheme);
+        dom.exportBtn.addEventListener('click', exportBackupJson);
+        dom.importBtn.addEventListener('click', () => dom.importFileInput.click());
+        dom.importFileInput.addEventListener('change', handleImportFileSelected);
+
+        // Search, Filter, & Sort controls
+        dom.searchInput.addEventListener('input', (e) => {
+          state.search = e.target.value;
+          renderItems();
+        });
+
+        dom.searchClearBtn.addEventListener('click', () => {
+          state.search = '';
+          dom.searchInput.value = '';
+          renderItems();
+          dom.searchInput.focus();
+        });
+
+        dom.roomFilter.addEventListener('change', (e) => {
+          state.roomFilter = e.target.value;
+          renderItems();
+        });
+
+        dom.personFilter.addEventListener('change', (e) => {
+          state.personFilter = e.target.value;
+          renderItems();
+        });
+
+        dom.photoFilterBtn.addEventListener('click', () => {
+          state.hasPhotoOnly = !state.hasPhotoOnly;
+          dom.photoFilterBtn.setAttribute('aria-pressed', String(state.hasPhotoOnly));
+          renderItems();
+        });
+
+        dom.sortSelect.addEventListener('change', (e) => {
+          state.sortBy = e.target.value;
+          renderItems();
+        });
+
+        dom.clearFiltersBtn.addEventListener('click', clearAllFilters);
+
+        // Event delegation on Items Grid (Edit, Delete, Lightbox, Empty-state buttons)
+        dom.itemsGrid.addEventListener('click', (e) => {
+          const emptyAdd = e.target.closest('#emptyAddBtn');
+          if (emptyAdd) {
+            openAddEditModal(null);
+            return;
+          }
+          const loadSamples = e.target.closest('#loadSamplesBtn');
+          if (loadSamples) {
+            loadSampleItems();
+            return;
+          }
+          const emptyReset = e.target.closest('#emptyResetFiltersBtn');
+          if (emptyReset) {
+            clearAllFilters();
+            return;
+          }
+
+          const actionEl = e.target.closest('[data-action]');
+          if (!actionEl) return;
+
+          const action = actionEl.getAttribute('data-action');
+          const id = actionEl.getAttribute('data-id');
+          const item = state.items.find((i) => i.id === id);
+          if (!item) return;
+
+          if (action === 'edit') {
+            openAddEditModal(item);
+          } else if (action === 'delete') {
+            openDeleteModal(item.id);
+          } else if (action === 'lightbox') {
+            const photoType = actionEl.getAttribute('data-photo-type');
+            if (photoType === 'object' && item.objectPhoto) {
+              openLightbox(item.objectPhoto, 'Object Photo', item.name);
+            } else if (photoType === 'place' && item.placePhoto) {
+              openLightbox(item.placePhoto, 'Place Photo', item.name + (item.place ? ` — ${item.place}` : ''));
+            }
+          }
+        });
+
+        // Add/Edit Form & Photo Buttons
+        dom.itemForm.addEventListener('submit', handleItemFormSubmit);
+
+        dom.objectCameraBtn.addEventListener('click', () => dom.objectCameraInput.click());
+        dom.objectFileBtn.addEventListener('click', () => dom.objectFileInput.click());
+        dom.objectCameraInput.addEventListener('change', () => handlePhotoSelected(dom.objectCameraInput, 'object'));
+        dom.objectFileInput.addEventListener('change', () => handlePhotoSelected(dom.objectFileInput, 'object'));
+        dom.removeObjectPhotoBtn.addEventListener('click', () => {
+          state.draftObjectPhoto = '';
+          updateDraftPhotoUI('object');
+        });
+        dom.objectPhotoPreviewImg.addEventListener('click', () => {
+          if (state.draftObjectPhoto) {
+            openLightbox(state.draftObjectPhoto, 'Object Photo', dom.itemNameInput.value.trim() || 'Preview');
+          }
+        });
+
+        dom.placeCameraBtn.addEventListener('click', () => dom.placeCameraInput.click());
+        dom.placeFileBtn.addEventListener('click', () => dom.placeFileInput.click());
+        dom.placeCameraInput.addEventListener('change', () => handlePhotoSelected(dom.placeCameraInput, 'place'));
+        dom.placeFileInput.addEventListener('change', () => handlePhotoSelected(dom.placeFileInput, 'place'));
+        dom.removePlacePhotoBtn.addEventListener('click', () => {
+          state.draftPlacePhoto = '';
+          updateDraftPhotoUI('place');
+        });
+        dom.placePhotoPreviewImg.addEventListener('click', () => {
+          if (state.draftPlacePhoto) {
+            openLightbox(state.draftPlacePhoto, 'Place Photo', dom.itemPlaceInput.value.trim() || dom.itemNameInput.value.trim() || 'Preview');
+          }
+        });
+
+        // Delete & Import Confirm Actions
+        dom.confirmDeleteBtn.addEventListener('click', confirmDeleteItem);
+        dom.importMergeBtn.addEventListener('click', () => executeImport('merge'));
+        dom.importReplaceBtn.addEventListener('click', () => executeImport('replace'));
+
+        // Generic modal close buttons & backdrop clicks
+        document.querySelectorAll('[data-close-modal]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const modalId = btn.getAttribute('data-close-modal');
+            const modal = document.getElementById(modalId);
+            if (modal) closeModal(modal);
+          });
+        });
+
+        [dom.itemModal, dom.deleteModal, dom.importModal].forEach((modal) => {
+          modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal(modal);
+          });
+        });
+
+        // Lightbox close handlers
+        dom.lightboxCloseBtn.addEventListener('click', closeLightbox);
+        dom.lightboxStage.addEventListener('click', (e) => {
+          if (e.target === dom.lightboxStage) closeLightbox();
+        });
+
+        // Global keyboard shortcuts (Escape to close overlays, "/" to focus search)
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') {
+            if (dom.lightbox.classList.contains('is-open')) {
+              closeLightbox();
+              return;
+            }
+            if (dom.deleteModal.classList.contains('is-open')) {
+              closeModal(dom.deleteModal);
+              return;
+            }
+            if (dom.importModal.classList.contains('is-open')) {
+              closeModal(dom.importModal);
+              return;
+            }
+            if (dom.itemModal.classList.contains('is-open')) {
+              closeModal(dom.itemModal);
+              return;
+            }
+          }
+
+          // Quick focus search when pressing "/" outside of text inputs
+          if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            const tag = document.activeElement && document.activeElement.tagName;
+            const anyOverlay = document.querySelector('.modal-backdrop.is-open, .lightbox.is-open');
+            if (!anyOverlay && tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT') {
+              e.preventDefault();
+              dom.searchInput.focus();
+            }
+          }
+        });
+      }
+
+      /* =====================================================================
+         20. APPLICATION BOOTSTRAP
+         ===================================================================== */
+      async function initApp() {
+        initTheme();
+        bindEvents();
+
+        try {
+          const indexedDbReady = await StorageService.init();
+          dom.storageModeNote.textContent = indexedDbReady
+            ? 'Offline storage: IndexedDB'
+            : 'Offline storage: LocalStorage (fallback)';
+
+          const storedItems = await StorageService.getAll();
+          state.items = storedItems
+            .map(sanitizeItem)
+            .filter(Boolean);
+
+          refreshDatalistsAndFilters();
+          updateBackupIndicator();
+          renderItems();
+        } catch (err) {
+          showToast('Error loading saved items. Starting fresh.', 'error');
+          state.items = [];
+          renderItems();
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', initApp);
+    })();
+  </script>
+</body>
+</html>
